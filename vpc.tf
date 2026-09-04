@@ -59,7 +59,7 @@ resource "aws_internet_gateway" "igw-main" {
 
 //NAT gateway
 resource "aws_nat_gateway" "ngw-main" {
-  subnet_id     = aws_subnet.example.id
+  subnet_id     = aws_subnet.pub-subnet-main-1.id
 
   tags = {
     Name = "ngw-main"
@@ -69,7 +69,7 @@ resource "aws_nat_gateway" "ngw-main" {
   depends_on = [aws_internet_gateway.example]
 }
 
-resource "aws_route_table" "route-table-main" {
+resource "aws_route_table" "route-table-igw" {
   vpc_id = aws_vpc.vpc-main.id
 
   route {
@@ -78,11 +78,31 @@ resource "aws_route_table" "route-table-main" {
   }
 
   tags = {
-    Name = "route-table-main"
+    Name = "route-table-igw"
   }
 }
 
-resource "aws_route_table_association" "route_table_association-main" {
-  subnet_id      = aws_subnet.pub-subnet-main-1.id
-  route_table_id = aws_route_table.route-table-main.id
+resource "aws_route_table" "route-table-ngtw" {
+  vpc_id = aws_vpc.vpc-main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.ngw-main.id
+  }
+
+  tags = {
+    Name = "route-table-ngtw"
+  }
 }
+
+
+resource "aws_route_table_association" "route_table_association-igw" {
+  gateway_id     = aws_internet_gateway.igw-main.id
+  route_table_id = aws_route_table.route-table-igw.id
+}
+
+resource "aws_route_table_association" "route_table_association-igw" {
+  gateway_id     = aws_nat_gateway_gateway.ngw-main.id
+  route_table_id = aws_route_table.route-table-igw.id
+}
+
